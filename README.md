@@ -1,8 +1,6 @@
 # GoPro telemetry to JSON converter
 Python program for converting ALL metadata contained in the GoPro GPMF stream to JSON
 
-![Diagram zonder titel drawio](https://user-images.githubusercontent.com/78315156/207683032-66d1444d-57eb-4d2d-8070-a3b334142878.png)
-
 ### Requirements
 -   **Python** (tested on version 3.10.2)
 -   **construct** module version 2.8.12 (does not work with latest version so make sure to run `pip install construct==2.8.12`)
