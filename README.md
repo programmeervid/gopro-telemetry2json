@@ -8,6 +8,5 @@ Python program for converting ALL metadata contained in the GoPro GPMF stream to
 -   **hachoir3** module (tested on version 3.0a2)
 
 ### How to run
-For converting a single file, run `python gpmf2json.py [input mp4 file] [output json file]`.
-
-For batch conversion, run `python gpmf2json.py [input directory] [output directory]`.
+-   For converting a single file, run `python gpmf2json.py [input mp4 file] [output json file]`.
+-   For batch conversion, run `python gpmf2json.py [input directory] [output directory]`.
