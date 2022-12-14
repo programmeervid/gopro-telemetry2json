@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Parses the FOURCC data in GPMF stream into fields"""
+"""Converts GoPro GPMF data to JSON"""
 import json
 import re
 import os
@@ -53,7 +53,41 @@ FOURCC_DEFINITIONS = {
 }
 
 
-def parse_values(key, value):
+def is_valid_input(input_path, output_path):
+    """checks if input is correct, provides user with feedback if this is not the case"""
+    if not (input_path and output_path):
+        print("ERROR: two inputs are required.\nUse the format \"python gpmf2json.py [input mp4 file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
+        return False
+    if not os.path.exists(input_path):
+        print("ERROR: input file does not exist.\nUse the format \"python gpmf2json.py [input mp4 file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
+        return False
+    if input_path == output_path:
+        print("ERROR: input and output cannot be the same.\nUse the format \"python gpmf2json.py [input mp4 file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
+        return False
+    if not (os.path.isdir(input_path) == os.path.isdir(output_path)):
+        print("ERROR: please specify either two files or two directories as an input.\nUse the format \"python gpmf2json.py [input mp4 file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
+        return False
+    return True
+
+
+def get_gpmf_data(infile):
+    """utilizes python-gpmf code for extraction of GPMF data and puts it in dictionary"""
+    payloads, _ = get_gpmf_payloads_from_file(infile)
+    data = {}
+    for gpmf_data, timestamps in payloads:
+        data_entry = []
+        for element, parents in recursive(gpmf_data):
+            try:
+                value = parse_value(element)
+            except ValueError:
+                value = element.data
+            data_entry.append(([x.decode('latin-1') for x in list(parents)+[element.key]], value))
+        data.update({str(timestamps): data_entry})
+    return data
+
+
+def cast_values(key, value):
+    """casts values based on the datatype, which is determined by the last element in the key"""
     if key[-1] in ["SIUN", "UNIT", "GPSA", "DVNM"]:
         return "deg, deg, m, m/s, m/s" if value == b'degdegm\x00\x00m/sm/s' else value.decode('latin-1')
     elif key[-1] in ["STMP", "ORIN", "ORIO"]:
@@ -71,51 +105,41 @@ def parse_values(key, value):
         return str(value)
 
 
+def process_gpmf_data(gpmf_data):
+    """refines GPMF data and optimizes structure for usability with JSON file"""
+    data = []
+    for (key, val) in gpmf_data.items():
+        data_a = [i for i, j in enumerate(val) if "STMP" in j[0]]
+        data_b = [0] + data_a + [len(val)]
+        data_c = list(zip(data_b[:-1], data_b[1:]))
+        data_d = list(map(lambda x: val[x[0]: x[1]], data_c))
+        data_e = {"Interval in ms": key} | {FOURCC_DEFINITIONS.get(x[0][-1], x[0][-1]): cast_values(x[0], x[1]) for x in data_d[0]} | {re.sub("[\(\[].*?[\)\]]", "", x[2][1].decode('latin-1')).strip(): {FOURCC_DEFINITIONS.get(y[0][-1], y[0][-1]): cast_values(y[0], y[1]) for y in x[:2]+x[3:]} for x in data_d[1:]}
+        data.append(data_e)
+    return data
+
+
 if __name__ == '__main__':
     import sys
     from extract import get_gpmf_payloads_from_file
     from parse import parse_value, recursive
 
+    # gets user input, exit program if input is incorrect
     input_path = os.path.abspath(sys.argv[1])
     output_path = os.path.abspath(sys.argv[2])
-    if not (input_path and output_path):
-        print("ERROR: two inputs are required.\nUse the format \"python gpmf2json.py [input mp4 file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
+    if not is_valid_input(input_path, output_path):
         exit()
-    if not os.path.exists(input_path):
-        print("ERROR: input file does not exist.\nUse the format \"python gpmf2json.py [input mp4 file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
-        exit()
-    if input_path == output_path:
-        print("ERROR: input and output cannot be the same.\nUse the format \"python gpmf2json.py [input mp4 file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
-        exit()
-    if not (os.path.isdir(input_path) == os.path.isdir(output_path)):
-        print("ERROR: please specify either two files or two directories as an input.\nUse the format \"python gpmf2json.py [input mp4 file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
-        exit()
+
+    # prepares list in [(input_path, output_path)] format
     if os.path.isdir(input_path):
+        # converts list of mp4 files in input files to list of (input_path, output_path) tuples
         files = list(map(lambda x: (os.path.join(input_path, x), os.path.join(output_path, os.path.splitext(x)[0] + ".json")), filter(lambda y: not os.path.isdir(y) and os.path.splitext(y)[1].lower() == ".mp4", os.listdir(input_path))))
         print(files)
     else:
         files = [(input_path, output_path)]
-    
+
+    # for each (input_path, output_path) pair, do conversion and write file
     for infile, outfile in files:
-        payloads, parser = get_gpmf_payloads_from_file(infile)
-        test_data = {}
-        for gpmf_data, timestamps in payloads:
-            data_entry = []
-            for element, parents in recursive(gpmf_data):
-                try:
-                    value = parse_value(element)
-                except ValueError:
-                    value = element.data
-                data_entry.append(([x.decode('latin-1') for x in list(parents)+[element.key]], value))
-            test_data.update({str(timestamps): data_entry})
-        test_data2 = []
-        for (key, val) in test_data.items():
-            test_data_a = [i for i, j in enumerate(val) if "STMP" in j[0]]
-            test_data_b = [0] + test_data_a + [len(val)]
-            test_data_c = list(zip(test_data_b[:-1], test_data_b[1:]))
-            test_data_d = list(map(lambda x: val[x[0]: x[1]], test_data_c))
-            test_data_e = {"Interval in ms": key} | {FOURCC_DEFINITIONS.get(x[0][-1], x[0][-1]): parse_values(x[0], x[1]) for x in test_data_d[0]} | {re.sub("[\(\[].*?[\)\]]", "", x[2][1].decode('latin-1')).strip(): {FOURCC_DEFINITIONS.get(y[0][-1], y[0][-1]): parse_values(y[0], y[1]) for y in x[:2]+x[3:]} for x in test_data_d[1:]}
-            test_data2.append(test_data_e)
+        data = process_gpmf_data(get_gpmf_data(infile))
         with open(outfile, 'w', encoding="utf-8") as fp:
-            fp.write(json.dumps(test_data2, indent=4, ensure_ascii=False))
+            fp.write(json.dumps(data, indent=4, ensure_ascii=False))
     
