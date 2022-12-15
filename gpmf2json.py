@@ -49,23 +49,31 @@ FOURCC_DEFINITIONS = {
     "MSKP": "Main video frame skip",
     "LSKP": "Low res video frame skip",
     "GPS9": "GPS9",
-    "TMPC": "Device temperature"
+    "TMPC": "Device temperature",
 }
 
 
 def is_valid_input(input_path, output_path):
     """checks if input is correct, provides user with feedback if this is not the case"""
     if not (input_path and output_path):
-        print("ERROR: two inputs are required.\nUse the format \"python gpmf2json.py [input mp4/mov file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
+        print(
+            'ERROR: two inputs are required.\nUse the format "python gpmf2json.py [input mp4/mov file] [output json file]" for a single file\nor  "python gpmf2json.py [input directory] [output directory]" for batch processing.'
+        )
         return False
     if not os.path.exists(input_path):
-        print("ERROR: input file does not exist.\nUse the format \"python gpmf2json.py [input mp4/mov file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
+        print(
+            'ERROR: input file does not exist.\nUse the format "python gpmf2json.py [input mp4/mov file] [output json file]" for a single file\nor  "python gpmf2json.py [input directory] [output directory]" for batch processing.'
+        )
         return False
     if input_path == output_path:
-        print("ERROR: input and output cannot be the same.\nUse the format \"python gpmf2json.py [input mp4/mov file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
+        print(
+            'ERROR: input and output cannot be the same.\nUse the format "python gpmf2json.py [input mp4/mov file] [output json file]" for a single file\nor  "python gpmf2json.py [input directory] [output directory]" for batch processing.'
+        )
         return False
     if not (os.path.isdir(input_path) == os.path.isdir(output_path)):
-        print("ERROR: please specify either two files or two directories as an input.\nUse the format \"python gpmf2json.py [input mp4/mov file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
+        print(
+            'ERROR: please specify either two files or two directories as an input.\nUse the format "python gpmf2json.py [input mp4/mov file] [output json file]" for a single file\nor  "python gpmf2json.py [input directory] [output directory]" for batch processing.'
+        )
         return False
     return True
 
@@ -81,7 +89,9 @@ def get_gpmf_data(infile):
                 value = parse_value(element)
             except ValueError:
                 value = element.data
-            data_entry.append(([x.decode('latin-1') for x in list(parents)+[element.key]], value))
+            data_entry.append(
+                ([x.decode("latin-1") for x in list(parents) + [element.key]], value)
+            )
         data.update({str(timestamps): data_entry})
     return data
 
@@ -89,7 +99,11 @@ def get_gpmf_data(infile):
 def cast_values(key, value):
     """casts values based on the datatype, which is determined by the last element in the key"""
     if key[-1] in ["SIUN", "UNIT", "GPSA", "DVNM"]:
-        return "deg, deg, m, m/s, m/s" if value == b'degdegm\x00\x00m/sm/s' else value.decode('latin-1')
+        return (
+            "deg, deg, m, m/s, m/s"
+            if value == b"degdegm\x00\x00m/sm/s"
+            else value.decode("latin-1")
+        )
     elif key[-1] in ["STMP", "ORIN", "ORIO"]:
         return int.from_bytes(value, "big")
     elif key[-1] in ["TSMP", "SCAL", "GPSP", "GPSF", "DVID"]:
@@ -99,7 +113,20 @@ def cast_values(key, value):
             return int(value)
     elif key[-1] in ["TMPC"]:
         return float(value)
-    elif key[-1] in ["MTRX", "ACCL", "GYRO", "SHUT", "WBAL", "WRGB", "ISOE", "UNIF", "GPS5", "IORI", "GRAV", "CORI"]:
+    elif key[-1] in [
+        "MTRX",
+        "ACCL",
+        "GYRO",
+        "SHUT",
+        "WBAL",
+        "WRGB",
+        "ISOE",
+        "UNIF",
+        "GPS5",
+        "IORI",
+        "GRAV",
+        "CORI",
+    ]:
         return value
     else:
         return str(value)
@@ -112,13 +139,26 @@ def process_gpmf_data(gpmf_data):
         data_a = [i for i, j in enumerate(val) if "STMP" in j[0]]
         data_b = [0] + data_a + [len(val)]
         data_c = list(zip(data_b[:-1], data_b[1:]))
-        data_d = list(map(lambda x: val[x[0]: x[1]], data_c))
-        data_e = {"Interval in ms": key} | {FOURCC_DEFINITIONS.get(x[0][-1], x[0][-1]): cast_values(x[0], x[1]) for x in data_d[0]} | {re.sub("[\(\[].*?[\)\]]", "", x[2][1].decode('latin-1')).strip(): {FOURCC_DEFINITIONS.get(y[0][-1], y[0][-1]): cast_values(y[0], y[1]) for y in x[:2]+x[3:]} for x in data_d[1:]}
+        data_d = list(map(lambda x: val[x[0] : x[1]], data_c))
+        data_e = (
+            {"Interval in ms": key}
+            | {
+                FOURCC_DEFINITIONS.get(x[0][-1], x[0][-1]): cast_values(x[0], x[1])
+                for x in data_d[0]
+            }
+            | {
+                re.sub("[\(\[].*?[\)\]]", "", x[2][1].decode("latin-1")).strip(): {
+                    FOURCC_DEFINITIONS.get(y[0][-1], y[0][-1]): cast_values(y[0], y[1])
+                    for y in x[:2] + x[3:]
+                }
+                for x in data_d[1:]
+            }
+        )
         data.append(data_e)
     return data
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
     from extract import get_gpmf_payloads_from_file
     from parse import parse_value, recursive
@@ -132,7 +172,19 @@ if __name__ == '__main__':
     # prepares list in [(input_path, output_path)] format
     if os.path.isdir(input_path):
         # converts list of mp4 or mov files in input files to list of (input_path, output_path) tuples
-        files = list(map(lambda x: (os.path.join(input_path, x), os.path.join(output_path, os.path.splitext(x)[0] + ".json")), filter(lambda y: not os.path.isdir(y) and os.path.splitext(y)[1].lower() in [".mp4", ".mov"], os.listdir(input_path))))
+        files = list(
+            map(
+                lambda x: (
+                    os.path.join(input_path, x),
+                    os.path.join(output_path, os.path.splitext(x)[0] + ".json"),
+                ),
+                filter(
+                    lambda y: not os.path.isdir(y)
+                    and os.path.splitext(y)[1].lower() in [".mp4", ".mov"],
+                    os.listdir(input_path),
+                ),
+            )
+        )
         print(files)
     else:
         files = [(input_path, output_path)]
@@ -140,6 +192,5 @@ if __name__ == '__main__':
     # for each (input_path, output_path) pair, do conversion and write file
     for infile, outfile in files:
         data = process_gpmf_data(get_gpmf_data(infile))
-        with open(outfile, 'w', encoding="utf-8") as fp:
+        with open(outfile, "w", encoding="utf-8") as fp:
             fp.write(json.dumps(data, indent=4, ensure_ascii=False))
-    
