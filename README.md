@@ -16,3 +16,4 @@ Python program for converting ALL metadata contained in the GoPro GPMF stream to
 
 ### Problems
 -   I only own a GoPro HERO 8 Black myself, and wrote this program specifically for that camera. The GPMF format has changed a lot over the years, so there is definitely some testing required on other cameras.
+-   I have not been able to find a GoPro test video in a .mov format, so I have not been able to test the program with such files.
