@@ -1,5 +1,5 @@
 # GoPro telemetry to JSON converter
-Python program for converting ALL metadata contained in the GoPro GPMF stream to JSON. This includes the GPS, accelerometer and gyroscope data among a whole bunch of other things. The resulting JSON makes it easy to process the telemetry data. Optimal for making your own telemetry visualizer in After Effects.
+Python program for converting ALL metadata contained in the GoPro GPMF stream to JSON. This includes the GPS, accelerometer and gyroscope data among a whole bunch of other things. The resulting JSON makes it easy to process the telemetry data.
 
 ### Requirements
 -   **Python** (tested on version 3.10.2)
