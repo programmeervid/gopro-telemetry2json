@@ -27,7 +27,7 @@ FOURCC_DEFINITIONS = {
     "GPSU": "UTC time and date",
     "GPSF": "GPS Fix",
     "GPSP": "GPS Precision",
-    "STMP": "Microsecond timestamps",
+    "STMP": "Timestamp in microseconds",
     "MAGN": "Magnetometer",
     "FACE": "Face detection",
     "FCNM": "Faces counted per frame",
