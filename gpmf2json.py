@@ -56,16 +56,16 @@ FOURCC_DEFINITIONS = {
 def is_valid_input(input_path, output_path):
     """checks if input is correct, provides user with feedback if this is not the case"""
     if not (input_path and output_path):
-        print("ERROR: two inputs are required.\nUse the format \"python gpmf2json.py [input mp4 file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
+        print("ERROR: two inputs are required.\nUse the format \"python gpmf2json.py [input mp4/mov file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
         return False
     if not os.path.exists(input_path):
-        print("ERROR: input file does not exist.\nUse the format \"python gpmf2json.py [input mp4 file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
+        print("ERROR: input file does not exist.\nUse the format \"python gpmf2json.py [input mp4/mov file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
         return False
     if input_path == output_path:
-        print("ERROR: input and output cannot be the same.\nUse the format \"python gpmf2json.py [input mp4 file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
+        print("ERROR: input and output cannot be the same.\nUse the format \"python gpmf2json.py [input mp4/mov file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
         return False
     if not (os.path.isdir(input_path) == os.path.isdir(output_path)):
-        print("ERROR: please specify either two files or two directories as an input.\nUse the format \"python gpmf2json.py [input mp4 file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
+        print("ERROR: please specify either two files or two directories as an input.\nUse the format \"python gpmf2json.py [input mp4/mov file] [output json file]\" for a single file\nor  \"python gpmf2json.py [input directory] [output directory]\" for batch processing.")
         return False
     return True
 
@@ -131,8 +131,8 @@ if __name__ == '__main__':
 
     # prepares list in [(input_path, output_path)] format
     if os.path.isdir(input_path):
-        # converts list of mp4 files in input files to list of (input_path, output_path) tuples
-        files = list(map(lambda x: (os.path.join(input_path, x), os.path.join(output_path, os.path.splitext(x)[0] + ".json")), filter(lambda y: not os.path.isdir(y) and os.path.splitext(y)[1].lower() == ".mp4", os.listdir(input_path))))
+        # converts list of mp4 or mov files in input files to list of (input_path, output_path) tuples
+        files = list(map(lambda x: (os.path.join(input_path, x), os.path.join(output_path, os.path.splitext(x)[0] + ".json")), filter(lambda y: not os.path.isdir(y) and os.path.splitext(y)[1].lower() in [".mp4", ".mov"], os.listdir(input_path))))
         print(files)
     else:
         files = [(input_path, output_path)]
