@@ -3,6 +3,8 @@
 import json
 import re
 import os
+from extract import get_gpmf_payloads_from_file
+from parse import parse_value, recursive
 
 FOURCC_DEFINITIONS = {
     "DVID": "Device/track ID",
@@ -181,8 +183,6 @@ def get_conv_files_list(input_path, output_path):
 
 if __name__ == "__main__":
     import sys
-    from extract import get_gpmf_payloads_from_file
-    from parse import parse_value, recursive
 
     # gets user input, exit program if input is incorrect
     input_path = os.path.abspath(sys.argv[1])
