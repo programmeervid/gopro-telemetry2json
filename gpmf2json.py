@@ -158,21 +158,11 @@ def process_gpmf_data(gpmf_data):
     return data
 
 
-if __name__ == "__main__":
-    import sys
-    from extract import get_gpmf_payloads_from_file
-    from parse import parse_value, recursive
-
-    # gets user input, exit program if input is incorrect
-    input_path = os.path.abspath(sys.argv[1])
-    output_path = os.path.abspath(sys.argv[2])
-    if not is_valid_input(input_path, output_path):
-        exit()
-
-    # prepares list in [(input_path, output_path)] format
+def get_conv_files_list(input_path, output_path):
+    """prepares list in [(input_path, output_path)] format for conversion"""
     if os.path.isdir(input_path):
         # converts list of mp4 or mov files in input files to list of (input_path, output_path) tuples
-        files = list(
+        return list(
             map(
                 lambda x: (
                     os.path.join(input_path, x),
@@ -185,9 +175,23 @@ if __name__ == "__main__":
                 ),
             )
         )
-        print(files)
     else:
-        files = [(input_path, output_path)]
+        return [(input_path, output_path)]
+
+
+if __name__ == "__main__":
+    import sys
+    from extract import get_gpmf_payloads_from_file
+    from parse import parse_value, recursive
+
+    # gets user input, exit program if input is incorrect
+    input_path = os.path.abspath(sys.argv[1])
+    output_path = os.path.abspath(sys.argv[2])
+    if not is_valid_input(input_path, output_path):
+        exit()
+
+    # prepares list in [(input_path, output_path)] format
+    files = get_conv_files_list(input_path, output_path)
 
     # for each (input_path, output_path) pair, do conversion and write file
     for infile, outfile in files:
