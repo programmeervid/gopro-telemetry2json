@@ -55,29 +55,37 @@ FOURCC_DEFINITIONS = {
 }
 
 
-def is_valid_input(input_path, output_path):
+def get_valid_input(argv):
+    """gets user input, exit program if input is incorrect"""
+    if len(argv) < 3:
+        print(
+            'ERROR: two inputs are required.\nUse the format "python gpmf2json.py [input mp4/mov file] [output json file]" for a single file\nor  "python gpmf2json.py [input directory] [output directory]" for batch processing.'
+        )
+        exit()
+    input_path = os.path.abspath(argv[1])
+    output_path = os.path.abspath(argv[2])
     """checks if input is correct, provides user with feedback if this is not the case"""
     if not (input_path and output_path):
         print(
             'ERROR: two inputs are required.\nUse the format "python gpmf2json.py [input mp4/mov file] [output json file]" for a single file\nor  "python gpmf2json.py [input directory] [output directory]" for batch processing.'
         )
-        return False
+        exit()
     if not os.path.exists(input_path):
         print(
             'ERROR: input file does not exist.\nUse the format "python gpmf2json.py [input mp4/mov file] [output json file]" for a single file\nor  "python gpmf2json.py [input directory] [output directory]" for batch processing.'
         )
-        return False
+        exit()
     if input_path == output_path:
         print(
             'ERROR: input and output cannot be the same.\nUse the format "python gpmf2json.py [input mp4/mov file] [output json file]" for a single file\nor  "python gpmf2json.py [input directory] [output directory]" for batch processing.'
         )
-        return False
+        exit()
     if not (os.path.isdir(input_path) == os.path.isdir(output_path)):
         print(
             'ERROR: please specify either two files or two directories as an input.\nUse the format "python gpmf2json.py [input mp4/mov file] [output json file]" for a single file\nor  "python gpmf2json.py [input directory] [output directory]" for batch processing.'
         )
-        return False
-    return True
+        exit()
+    return input_path, output_path
 
 
 def get_gpmf_data(infile):
@@ -185,10 +193,7 @@ if __name__ == "__main__":
     import sys
 
     # gets user input, exit program if input is incorrect
-    input_path = os.path.abspath(sys.argv[1])
-    output_path = os.path.abspath(sys.argv[2])
-    if not is_valid_input(input_path, output_path):
-        exit()
+    input_path, output_path = get_valid_input(sys.argv)
 
     # prepares list in [(input_path, output_path)] format
     files = get_conv_files_list(input_path, output_path)
